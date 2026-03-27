@@ -27,7 +27,7 @@ export function InstagramAuthModal({
   onClose,
   onSuccess,
 }: InstagramAuthModalProps) {
-  const [accessToken, setAccessToken] = useState("EAALNqJXydU4BPnBHgTZBSEtsSZCgDwtfxAtdbIcQrPx6sVU6pI6O9x9nKfhNZCp2ZA292FHk22VTceS2o3lHHE0s3ULPIZALkrGbbLjmbVKHLNFnlt2KV6EgkpEJdBhm4NJdVhKZCkZAoBVCcR7huUCRXvZCVg0cfSLxLGB0HtkfiWeNUIERBoKrXGVUajjWQoLj");
+  const [accessToken, setAccessToken] = useState("EAALNqJXydU4BRICTvMRuuzUbh4HVdaIJvg5nxQAZCnGDLaiDquIoZBhqicm8Y4wpCDW7lCsTChqOBmRdDjcM0GDTCTOSfOtZBpQKJOP4L9pAvPzhAyETCgpetMe59qZC86gnvRn1LP1O47DrhSivy95TQLMBWj7kZCCumk5dZAw9BpXVfmZA4vkSGlQpBgXsI8U");
   const [userId, setUserId] = useState("17841477241642522");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
