@@ -136,7 +136,7 @@ export const ChatbotWidget = () => {
     addMessage({
       id: Date.now().toString(),
       role: "assistant",
-      content: `✅ Taking you to ${route}...`,
+      content: `Taking you to ${route}...`,
       timestamp: new Date(),
     });
   };
@@ -201,7 +201,7 @@ export const ChatbotWidget = () => {
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <h3 className="font-semibold text-lg">Smart Assistant 🤖</h3>
+            <h3 className="font-semibold text-base">Smart Assistant</h3>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
@@ -243,7 +243,7 @@ export const ChatbotWidget = () => {
                         : "bg-muted"
                     )}
                   >
-                    <div className="text-sm space-y-2">
+                    <div className="text-xs space-y-2">
                       {messageParts.map((part, idx) => (
                         <React.Fragment key={idx}>
                           {part.type === "text" ? (
