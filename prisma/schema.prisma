@@ -1,0 +1,307 @@
+// schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // pooled connection (good for runtime)
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  clerkId       String  @id
+  instaUsername String?
+  instaPassword String? // ⚠️ recommend encrypting before saving
+
+  // YouTube OAuth tokens
+  youtubeAccessToken  String?
+  youtubeRefreshToken String?
+  youtubeTokenExpiry  DateTime?
+  youtubeTokenType    String?
+  youtubeScope        String?
+
+  // timestamps
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+
+  // Twitter OAuth tokens
+  twitterAccessToken  String?
+  twitterRefreshToken String?
+  twitterTokenExpiry  DateTime?
+  twitterUserId       String?
+  twitterUsername     String?
+
+  conversations      Conversation[]
+  instagramPosts     InstagramPost[]
+  instagramAnalytics InstagramAnalytics[]
+  instagramAccount   InstagramAccount?
+  generatedMedia     GeneratedMedia[]
+  creatorProfile     CreatorProfile?
+  youtubeAnalytics   YouTubeAnalytics[]
+  scheduledPosts     ScheduledPost[]
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  title     String?
+  role      String // e.g. "influencer", "marketer" (system prompt mapping in data.js)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clerkId String
+  user    User   @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
+
+  messages Message[]
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           Role // "user" or "assistant"
+  content        String?
+  imageUrls      String[] // requires Postgres; for MySQL/SQLite, model images separately
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  user
+  assistant
+}
+
+model InstagramPost {
+  id          String    @id @default(cuid())
+  mediaId     String
+  containerId String?
+  mediaType   String // IMAGE, VIDEO, CAROUSEL_ALBUM
+  mediaUrl    String?
+  caption     String?
+  permalink   String?
+  timestamp   DateTime  @default(now())
+  status      String    @default("published") // published, failed, scheduled
+  scheduledAt DateTime?
+
+  // Analytics data
+  likes    Int @default(0)
+  comments Int @default(0)
+  shares   Int @default(0)
+  saved    Int @default(0)
+  reach    Int @default(0)
+  views    Int @default(0)
+
+  // Raw analytics data (JSON)
+  rawAnalytics Json?
+
+  // Comments data (JSON)
+  rawComments Json?
+
+  // Media info (JSON)
+  mediaInfo Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clerkId String
+  user    User   @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
+
+  @@unique([mediaId, clerkId])
+  @@map("instagram_posts")
+}
+
+model InstagramAnalytics {
+  id        String   @id @default(cuid())
+  mediaId   String
+  period    String // lifetime, day, week, days_28
+  reach     Int      @default(0)
+  likes     Int      @default(0)
+  comments  Int      @default(0)
+  shares    Int      @default(0)
+  saved     Int      @default(0)
+  views     Int      @default(0)
+  timestamp DateTime @default(now())
+
+  // Raw analytics data
+  rawData Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clerkId String
+  user    User   @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
+
+  @@map("instagram_analytics")
+}
+
+model InstagramAccount {
+  id                String  @id @default(cuid())
+  accountId         String  @unique
+  username          String
+  name              String?
+  biography         String?
+  followersCount    Int     @default(0)
+  followsCount      Int     @default(0)
+  mediaCount        Int     @default(0)
+  profilePictureUrl String?
+  website           String?
+
+  // Account analytics
+  profileViews      Int @default(0)
+  websiteClicks     Int @default(0)
+  accountsEngaged   Int @default(0)
+  totalInteractions Int @default(0)
+
+  // Influencer metrics
+  averageEngagementPerPost   Float?
+  engagementRatePercentage   Float?
+  totalEngagementLast12Posts Int    @default(0)
+  totalPostsAnalyzed         Int    @default(0)
+
+  // Raw account data
+  rawAccountData Json?
+  rawRecentMedia Json?
+
+  lastSync  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clerkId String @unique
+  user    User   @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
+
+  @@map("instagram_accounts")
+}
+
+model CreatorProfile {
+  id          String  @id @default(cuid())
+  displayName String?
+  bio         String?
+  email       String?
+  website     String?
+
+  contentGenres    String[] @default([])
+  targetAudience   String?
+  ageRange         String?
+  primaryPlatforms String[] @default([])
+
+  editingStyle     String?
+  colorPalette     String?
+  contentTone      String?
+  postingFrequency String?
+
+  primaryGoals     String[] @default([])
+  contentFocus     String[] @default([])
+  brandPartnership Boolean  @default(false)
+  monetization     Boolean  @default(false)
+
+  preferredFormats String[] @default([])
+  videoLength      String?
+  imageStyle       String?
+
+  // Collaborator discovery
+  discoverable Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clerkId String @unique
+  user    User   @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
+
+  @@map("creator_profiles")
+}
+
+model GeneratedMedia {
+  id                 String    @id @default(cuid())
+  fileName           String
+  originalName       String?
+  mediaType          MediaType // IMAGE or VIDEO
+  fileSize           Int?
+  cloudinaryUrl      String
+  cloudinaryPublicId String
+  prompt             String?
+  metadata           Json? // Store generation parameters, dimensions, etc.
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // User relation
+  clerkId String
+  user    User   @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
+
+  @@map("generated_media")
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+model YouTubeAnalytics {
+  id   String   @id @default(cuid())
+  date DateTime // Day for which the analytics data is stored
+
+  // Channel metrics
+  views             Int @default(0)
+  likes             Int @default(0)
+  comments          Int @default(0)
+  shares            Int @default(0)
+  subscribersGained Int @default(0)
+  subscribersLost   Int @default(0)
+  // Total subscribers on the channel at the time of the snapshot
+  subscribersTotal  Int @default(0)
+  watchTimeMinutes  Int @default(0) // Total watch time in minutes
+
+  // Engagement metrics
+  averageViewDuration Int   @default(0) // In seconds
+  impressions         Int   @default(0)
+  clickThroughRate    Float @default(0.0) // CTR percentage
+
+  // Video metrics (optional - for individual video tracking)
+  videoId       String?
+  videoTitle    String?
+  videoViews    Int     @default(0)
+  videoLikes    Int     @default(0)
+  videoComments Int     @default(0)
+
+  // Raw analytics data from YouTube API
+  rawData Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // User relation
+  clerkId String
+  user    User   @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
+
+  // Unique constraint to prevent duplicate entries for same user/date
+  @@unique([clerkId, date])
+  @@map("youtube_analytics")
+}
+
+model ScheduledPost {
+  id          String   @id @default(cuid())
+  title       String?
+  content     String
+  mediaUrls   String[] @default([])
+  platform    String // "twitter", "instagram", "linkedin", etc.
+  scheduledAt DateTime
+  status      String   @default("scheduled") // "scheduled", "published", "failed", "draft"
+  hashtags    String[] @default([])
+
+  // Publishing results
+  publishedAt  DateTime?
+  publishedId  String? // Platform-specific post ID
+  publishedUrl String? // Direct link to published post
+  errorMessage String? // Error message if publishing failed
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // User relation
+  clerkId String
+  user    User   @relation(fields: [clerkId], references: [clerkId], onDelete: Cascade)
+
+  @@map("scheduled_posts")
+}

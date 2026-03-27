@@ -1,0 +1,67 @@
+export const mockYouTubeData = {
+  channel: {
+    id: "UC12345abcdef",
+    snippet: {
+      title: "Creator Studio",
+      description: "Creating amazing videos with AI assistance",
+      thumbnails: {
+        default: {
+          url: "https://yt3.googleusercontent.com/mock-thumbnail-url",
+        },
+        medium: {
+          url: "https://yt3.googleusercontent.com/mock-thumbnail-url-medium",
+        },
+        high: {
+          url: "https://yt3.googleusercontent.com/mock-thumbnail-url-high",
+        },
+      },
+    },
+    statistics: {
+      viewCount: "285642",
+      subscriberCount: "12450",
+      videoCount: "48",
+    },
+  },
+  analytics: {
+    columnHeaders: [
+      { name: "day", columnType: "DIMENSION" },
+      { name: "views", columnType: "METRIC" },
+      { name: "likes", columnType: "METRIC" },
+      { name: "estimatedMinutesWatched", columnType: "METRIC" },
+      { name: "subscribersGained", columnType: "METRIC" },
+    ],
+    rows: [
+      ["2025-08-21", 542, 78, 1843, 12],
+      ["2025-08-22", 623, 92, 2105, 15],
+      ["2025-08-23", 498, 73, 1756, 9],
+      ["2025-08-24", 721, 104, 2456, 18],
+      ["2025-08-25", 635, 89, 2198, 14],
+      ["2025-08-26", 582, 85, 1987, 11],
+      ["2025-08-27", 701, 97, 2321, 17],
+      ["2025-08-28", 633, 91, 2187, 13],
+      ["2025-08-29", 594, 84, 2045, 12],
+      ["2025-08-30", 687, 96, 2289, 16],
+      ["2025-08-31", 724, 103, 2398, 19],
+      ["2025-09-01", 650, 94, 2210, 15],
+      ["2025-09-02", 598, 86, 2089, 13],
+      ["2025-09-03", 672, 97, 2298, 17],
+      ["2025-09-04", 702, 101, 2356, 18],
+      ["2025-09-05", 618, 89, 2134, 14],
+      ["2025-09-06", 729, 105, 2487, 20],
+      ["2025-09-07", 683, 98, 2312, 16],
+      ["2025-09-08", 641, 93, 2198, 15],
+      ["2025-09-09", 712, 102, 2421, 19],
+      ["2025-09-10", 695, 100, 2378, 17],
+      ["2025-09-11", 654, 94, 2243, 15],
+      ["2025-09-12", 723, 103, 2456, 19],
+      ["2025-09-13", 687, 99, 2354, 16],
+      ["2025-09-14", 672, 97, 2298, 17],
+      ["2025-09-15", 698, 100, 2387, 18],
+      ["2025-09-16", 715, 103, 2432, 19],
+      ["2025-09-17", 689, 99, 2378, 17],
+      ["2025-09-18", 703, 101, 2412, 18],
+      ["2025-09-19", 735, 106, 2498, 21],
+      ["2025-09-20", 724, 104, 2465, 20],
+    ],
+  },
+};
