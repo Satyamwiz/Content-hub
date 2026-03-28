@@ -93,6 +93,34 @@ export function VideoGenerationHub() {
     setIsGenerating(true);
     let progressInterval: NodeJS.Timeout | null = null;
 
+    // Helper to schedule a single randomised tick, then schedule the next
+    const scheduleNextTick = (videoId: string) => {
+      // Random delay: 4–8 seconds per tick, giving ~2min for 0→85%
+      const delay = Math.random() * 4000 + 4000;
+      progressInterval = setTimeout(() => {
+        setCurrentVideo((prev) => {
+          if (prev && prev.id === videoId && prev.progress < 85) {
+            // Tiny random increment: 0.5–2.5% per tick
+            const increment = Math.random() * 2 + 0.5;
+            const newProgress = Math.min(
+              parseFloat((prev.progress + increment).toFixed(1)),
+              85
+            );
+            const updatedVideo = { ...prev, progress: newProgress };
+
+            setGenerationHistory((prevHistory) =>
+              prevHistory.map((v) => (v.id === videoId ? updatedVideo : v))
+            );
+
+            // Schedule next tick only if still generating
+            scheduleNextTick(videoId);
+            return updatedVideo;
+          }
+          return prev;
+        });
+      }, delay);
+    };
+
     try {
       // Create new video entry with generating status
       const newVideo: GeneratedVideo = {
@@ -107,36 +135,14 @@ export function VideoGenerationHub() {
         aspectRatio: request.aspectRatio,
         createdAt: new Date(),
         status: "generating",
-        progress: 0,
+        progress: 5, // Start at 5% so the bar is immediately visible
       };
 
       setCurrentVideo(newVideo);
       setGenerationHistory((prev) => [newVideo, ...prev]);
 
-      // Start progress simulation - slower progress for realistic 2 minute generation
-      progressInterval = setInterval(() => {
-        setCurrentVideo((prev) => {
-          if (prev && prev.progress < 85) {
-            // Slower progress increment for 2 minute generation time
-            const increment = Math.random() * 3 + 1; // 1-4% increment
-            const newProgress = Math.round(prev.progress + increment); // Round to integer
-            const updatedVideo = {
-              ...prev,
-              progress: Math.min(newProgress, 85), // Cap at 85% until API completes
-            };
-
-            // Update history as well
-            setGenerationHistory((prevHistory) =>
-              prevHistory.map((video) =>
-                video.id === prev.id ? updatedVideo : video
-              )
-            );
-
-            return updatedVideo;
-          }
-          return prev;
-        });
-      }, 3000); // Update every 3 seconds for smoother 2-minute progression
+      // Kick off the randomised slow progress ticks
+      scheduleNextTick(newVideo.id);
 
       // Call the new API that handles Cloudinary upload
       const formData = new FormData();
@@ -155,9 +161,9 @@ export function VideoGenerationHub() {
 
       const apiResponse = await response.json();
 
-      // Clear progress interval
+      // Clear progress timeout
       if (progressInterval) {
-        clearInterval(progressInterval);
+        clearTimeout(progressInterval);
       }
 
       // Complete generation with API response
@@ -178,9 +184,9 @@ export function VideoGenerationHub() {
     } catch (error) {
       console.error("Video generation failed:", error);
 
-      // Clear progress interval if it exists
+      // Clear progress timeout if it exists
       if (progressInterval) {
-        clearInterval(progressInterval);
+        clearTimeout(progressInterval);
       }
 
       setCurrentVideo((prev) =>

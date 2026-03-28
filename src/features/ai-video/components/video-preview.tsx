@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Play,
   Pause,
@@ -21,6 +22,10 @@ import {
   AlertCircle,
   Loader2,
   Youtube,
+  ShieldAlert,
+  Zap,
+  Film,
+  Wand2,
 } from "lucide-react";
 
 import { GeneratedVideo } from "../video-generation-hub";
@@ -115,39 +120,139 @@ export function VideoPreview({
 
   // Generating state
   if (isGenerating && video?.status === "generating") {
+    const progress = video.progress;
+    const estimatedSecondsLeft = Math.max(
+      0,
+      Math.round(((100 - progress) / 100) * 120)
+    );
+    const minutesLeft = Math.floor(estimatedSecondsLeft / 60);
+    const secondsLeft = estimatedSecondsLeft % 60;
+
+    const steps = [
+      { label: "Uploading image", icon: <Film className="h-3.5 w-3.5" />, threshold: 10 },
+      { label: "Analysing prompt", icon: <Wand2 className="h-3.5 w-3.5" />, threshold: 25 },
+      { label: "Generating frames", icon: <Zap className="h-3.5 w-3.5" />, threshold: 55 },
+      { label: "Compositing video", icon: <Sparkles className="h-3.5 w-3.5" />, threshold: 80 },
+      { label: "Finalising & saving", icon: <CheckCircle className="h-3.5 w-3.5" />, threshold: 95 },
+    ];
+
     return (
       <div className="space-y-4">
-        {/* Generation Progress */}
-        <div className="aspect-video bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg flex items-center justify-center border border-purple-200 dark:border-purple-800">
-          <div className="text-center space-y-4">
-            <div className="relative">
-              <div className="p-4 bg-purple-500 rounded-full">
-                <Loader2 className="h-8 w-8 text-white animate-spin" />
+        {/* ⚠️ Do Not Navigate Away Banner */}
+        <Alert className="border-amber-400 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-600">
+          <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="text-amber-800 dark:text-amber-300 font-medium text-sm">
+            ⚠️ <strong>Do not close or navigate away from this page</strong> — your video is being generated. Leaving now will cancel the process.
+          </AlertDescription>
+        </Alert>
+
+        {/* Generation Animation */}
+        <div className="aspect-video bg-gradient-to-br from-purple-50 via-violet-50 to-pink-50 dark:from-purple-950/40 dark:via-violet-950/30 dark:to-pink-950/40 rounded-lg flex items-center justify-center border border-purple-200 dark:border-purple-800 relative overflow-hidden">
+          {/* Animated background pulse rings */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-32 h-32 rounded-full border border-purple-300/40 dark:border-purple-600/30 animate-[ping_3s_ease-in-out_infinite]"></div>
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-48 h-48 rounded-full border border-purple-200/30 dark:border-purple-700/20 animate-[ping_3s_ease-in-out_infinite_1s]"></div>
+          </div>
+
+          <div className="text-center space-y-4 z-10 px-6">
+            {/* Spinning loader */}
+            <div className="relative inline-flex items-center justify-center">
+              <div className="absolute w-20 h-20 rounded-full border-4 border-purple-200 dark:border-purple-800"></div>
+              <div className="absolute w-20 h-20 rounded-full border-4 border-transparent border-t-purple-500 animate-spin"></div>
+              <div className="p-4 bg-purple-500 rounded-full shadow-lg shadow-purple-500/30">
+                <Loader2 className="h-7 w-7 text-white animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
               </div>
-              <div className="absolute inset-0 rounded-full border-4 border-purple-200 dark:border-purple-800 animate-pulse"></div>
             </div>
-            <div>
-              <h3 className="font-semibold text-purple-900 dark:text-purple-100">
-                Generating Video...
+
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100">
+                Generating Your Video…
               </h3>
-              <p className="text-sm text-purple-700 dark:text-purple-300">
-                AI is creating your video
+              <p className="text-sm text-purple-600 dark:text-purple-300">
+                AI is crafting your video frame by frame
               </p>
+            </div>
+
+            {/* ETA */}
+            <div className="flex items-center justify-center gap-1.5 text-xs text-purple-500 dark:text-purple-400">
+              <Clock className="h-3.5 w-3.5" />
+              <span>
+                {minutesLeft > 0
+                  ? `~${minutesLeft}m ${secondsLeft}s remaining`
+                  : secondsLeft > 0
+                  ? `~${secondsLeft}s remaining`
+                  : "Finalising…"}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Progress Details */}
-        <Card>
-          <CardContent className="p-4 space-y-3">
+        {/* Progress Bar Card */}
+        <Card className="border-purple-100 dark:border-purple-900">
+          <CardContent className="p-4 space-y-4">
+            {/* Percentage header */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Generation Progress</span>
-              <Badge variant="secondary">{Math.round(video.progress)}%</Badge>
+              <span className="text-sm font-semibold flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-purple-500" />
+                Generation Progress
+              </span>
+              <Badge
+                variant="secondary"
+                className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 font-bold tabular-nums min-w-[48px] justify-center"
+              >
+                {Math.round(progress)}%
+              </Badge>
             </div>
-            <Progress value={video.progress} className="h-2" />
-            <div className="p-2 bg-blue-50 dark:bg-blue-950 rounded text-xs text-blue-700 dark:text-blue-300">
-              💡 This usually takes up to 2 minutes. You can
-              continue using other features while we generate your video.
+
+            {/* Progress bar */}
+            <div className="space-y-1.5">
+              <Progress
+                value={progress}
+                className="h-3 bg-purple-100 dark:bg-purple-950 [&>div]:bg-gradient-to-r [&>div]:from-purple-500 [&>div]:to-pink-500 [&>div]:transition-all [&>div]:duration-700"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>0%</span>
+                <span>100%</span>
+              </div>
+            </div>
+
+            {/* Processing Steps */}
+            <div className="grid grid-cols-5 gap-1 pt-1">
+              {steps.map((step, idx) => {
+                const done = progress >= step.threshold;
+                const active =
+                  progress >= (idx === 0 ? 0 : steps[idx - 1].threshold) &&
+                  progress < step.threshold;
+                return (
+                  <div
+                    key={step.label}
+                    className={`flex flex-col items-center gap-1 text-center transition-all duration-500 ${
+                      done
+                        ? "text-purple-600 dark:text-purple-400"
+                        : active
+                        ? "text-purple-500 dark:text-purple-300 animate-pulse"
+                        : "text-muted-foreground/40"
+                    }`}
+                  >
+                    <div
+                      className={`p-1.5 rounded-full transition-all duration-500 ${
+                        done
+                          ? "bg-purple-100 dark:bg-purple-900"
+                          : active
+                          ? "bg-purple-50 dark:bg-purple-950 ring-1 ring-purple-300"
+                          : "bg-muted/30"
+                      }`}
+                    >
+                      {done ? <CheckCircle className="h-3.5 w-3.5 text-green-500" /> : step.icon}
+                    </div>
+                    <span className="text-[10px] leading-tight font-medium hidden sm:block">
+                      {step.label}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
