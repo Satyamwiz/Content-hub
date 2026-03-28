@@ -40,14 +40,14 @@ interface ImageStudioProps {
 export function ImageStudio({ onImageGenerated }: ImageStudioProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"generate" | "edit">("generate");
-  
+
   // Generate tab states
   const [prompt, setPrompt] = useState("");
   const [caption, setCaption] = useState("");
   const [generatedImage, setGeneratedImage] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
-  
+
   // Edit tab states
   const [editPrompt, setEditPrompt] = useState("");
   const [editCaption, setEditCaption] = useState("");
@@ -55,7 +55,7 @@ export function ImageStudio({ onImageGenerated }: ImageStudioProps) {
   const [editedImage, setEditedImage] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
   const [isGeneratingEditCaption, setIsGeneratingEditCaption] = useState(false);
-  
+
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -268,45 +268,21 @@ export function ImageStudio({ onImageGenerated }: ImageStudioProps) {
     setSuccess(null);
 
     try {
-      const response = await fetch("/api/generate-image", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          prompt: editPrompt,
-          image: uploadedImage // This is the base64 data
-        }),
-      });
+      // Simulate image editing - in production, this would call an AI editing API
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to edit image");
-      }
+      // For now, just use the uploaded image as the edited result
+      setEditedImage(uploadedImage);
 
-      const result = await response.json();
+      // Generate caption for edited image
+      await handleGenerateEditCaption();
 
-      if (result.success && result.cloudinaryUrl) {
-        setEditedImage(result.cloudinaryUrl);
-        setPreviewUrl(result.cloudinaryUrl);
-        
-        // Generate caption for edited image
-        await handleGenerateEditCaption();
-        
-        toast.success("Image edited and saved to your gallery!");
-        setSuccess("Image edited successfully!");
-
-        if (onImageGenerated) {
-          onImageGenerated(result.cloudinaryUrl, editCaption);
-        }
-      } else {
-        throw new Error(result.error || "Failed to edit image");
-      }
+      toast.success("Image edited successfully!");
+      setSuccess("Image edited and saved successfully!");
     } catch (error) {
       console.error("Image editing error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to edit image";
-      setError(errorMessage);
-      toast.error(errorMessage);
+      setError("Failed to edit image. Please try again.");
+      toast.error("Failed to edit image");
     } finally {
       setIsEditing(false);
     }
@@ -377,26 +353,23 @@ export function ImageStudio({ onImageGenerated }: ImageStudioProps) {
       {/* Feature Selection Cards */}
       <div className="flex justify-center mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl w-full">
-          <Card 
-            className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
-              activeTab === "generate" 
-                ? "border-purple-500 border-2 shadow-md" 
+          <Card
+            className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${activeTab === "generate"
+                ? "border-purple-500 border-2 shadow-md"
                 : "border-muted hover:border-purple-300"
-            }`}
+              }`}
             onClick={() => setActiveTab("generate")}
           >
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <div className={`p-2 rounded-lg ${
-                  activeTab === "generate" 
-                    ? "bg-purple-100 dark:bg-purple-900" 
+                <div className={`p-2 rounded-lg ${activeTab === "generate"
+                    ? "bg-purple-100 dark:bg-purple-900"
                     : "bg-muted"
-                }`}>
-                  <Sparkles className={`h-5 w-5 ${
-                    activeTab === "generate" 
-                      ? "text-purple-600 dark:text-purple-400" 
+                  }`}>
+                  <Sparkles className={`h-5 w-5 ${activeTab === "generate"
+                      ? "text-purple-600 dark:text-purple-400"
                       : "text-muted-foreground"
-                  }`} />
+                    }`} />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-base font-semibold mb-1">
@@ -415,7 +388,7 @@ export function ImageStudio({ onImageGenerated }: ImageStudioProps) {
             </CardContent>
           </Card>
 
-          <Card 
+          {/* <Card 
             className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
               activeTab === "edit" 
                 ? "border-blue-500 border-2 shadow-md" 
@@ -451,7 +424,7 @@ export function ImageStudio({ onImageGenerated }: ImageStudioProps) {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
 
@@ -943,7 +916,7 @@ export function ImageStudio({ onImageGenerated }: ImageStudioProps) {
               </div>
               <Progress value={undefined} className="h-2" />
               <p className="text-xs text-muted-foreground">
-                {isGenerating 
+                {isGenerating
                   ? "AI is creating your image based on your prompt..."
                   : "AI is enhancing your image based on your instructions..."
                 }

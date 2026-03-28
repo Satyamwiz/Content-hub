@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { prompt, image } = await request.json();
+    const { prompt } = await request.json();
 
     if (!prompt?.trim()) {
       return NextResponse.json(
@@ -23,41 +23,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let result;
-    let usedImageUrl = null;
-
-    if (image) {
-      // Image editing mode
-      // 1. Upload the source image to Cloudinary first to get a URL for the AI service
-      const sourceUpload = await MediaService.uploadAndSaveMedia(image, {
-        fileName: `source-edit-${Date.now()}.webp`,
-        mediaType: "IMAGE",
-        prompt: `Source for: ${prompt}`,
-        cloudinaryFolder: "edit-sources",
-      });
-
-      if (!sourceUpload.success || !sourceUpload.media?.cloudinaryUrl) {
-        return NextResponse.json(
-          { error: sourceUpload.error || "Failed to upload source image" },
-          { status: 500 }
-        );
-      }
-
-      usedImageUrl = sourceUpload.media.cloudinaryUrl;
-
-      // 2. Call the AI service to process/edit the image
-      result = await aiImageHelperService.processImage({ 
-        prompt, 
-        image_url: usedImageUrl 
-      });
-    } else {
-      // Standard generation mode
-      result = await aiImageHelperService.generateImage({ prompt });
-    }
+    // Generate image using AI service
+    const result = await aiImageHelperService.generateImage({ prompt });
 
     if (!result.success || !result.imageBlob) {
       return NextResponse.json(
-        { error: result.error || "Failed to process image" },
+        { error: result.error || "Failed to generate image" },
         { status: 500 }
       );
     }
