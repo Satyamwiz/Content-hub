@@ -124,7 +124,7 @@ export default function ProfilePage() {
   const displaySubscribers = hasRealSubscribers
     ? mySubscribers
     : getDeterministicRandom(user?.id || "fallback", 1200, 25000);
-  
+
   const displayMatchPercent = getDeterministicRandom(user?.id || "fallback", 78, 98);
 
   const formatSubscribers = (num: number) => {
@@ -315,10 +315,10 @@ export default function ProfilePage() {
                 {displaySubscribers ? formatSubscribers(displaySubscribers) : "0"} Subscribers
                 {!hasRealSubscribers && <span className="opacity-50 ml-1 text-[10px]">(Estimated)</span>}
               </Badge>
-              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 py-1">
+              {/* <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 py-1">
                 <Star className="w-3.5 h-3.5 mr-1.5" />
                 {displayMatchPercent}% Match Potential
-              </Badge>
+              </Badge> */}
             </div>
           </div>
         </div>
@@ -489,11 +489,10 @@ export default function ProfilePage() {
                 return (
                   <div
                     key={platform.name}
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                      profile.primaryPlatforms.includes(platform.name)
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${profile.primaryPlatforms.includes(platform.name)
                         ? "border-primary bg-primary/10"
                         : "border-muted hover:bg-muted/50"
-                    }`}
+                      }`}
                     onClick={() => handlePlatformToggle(platform.name)}
                   >
                     <div className="flex flex-col items-center gap-2">
@@ -822,8 +821,8 @@ export default function ProfilePage() {
           {loading
             ? "Saving Profile..."
             : saved
-            ? "Profile Saved!"
-            : "Save Profile"}
+              ? "Profile Saved!"
+              : "Save Profile"}
         </Button>
       </div>
     </div>
