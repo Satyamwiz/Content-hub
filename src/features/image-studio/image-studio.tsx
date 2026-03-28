@@ -268,21 +268,45 @@ export function ImageStudio({ onImageGenerated }: ImageStudioProps) {
     setSuccess(null);
 
     try {
-      // Simulate image editing - in production, this would call an AI editing API
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      
-      // For now, just use the uploaded image as the edited result
-      setEditedImage(uploadedImage);
-      
-      // Generate caption for edited image
-      await handleGenerateEditCaption();
-      
-      toast.success("Image edited successfully!");
-      setSuccess("Image edited and saved successfully!");
+      const response = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          prompt: editPrompt,
+          image: uploadedImage // This is the base64 data
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to edit image");
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.cloudinaryUrl) {
+        setEditedImage(result.cloudinaryUrl);
+        setPreviewUrl(result.cloudinaryUrl);
+        
+        // Generate caption for edited image
+        await handleGenerateEditCaption();
+        
+        toast.success("Image edited and saved to your gallery!");
+        setSuccess("Image edited successfully!");
+
+        if (onImageGenerated) {
+          onImageGenerated(result.cloudinaryUrl, editCaption);
+        }
+      } else {
+        throw new Error(result.error || "Failed to edit image");
+      }
     } catch (error) {
       console.error("Image editing error:", error);
-      setError("Failed to edit image. Please try again.");
-      toast.error("Failed to edit image");
+      const errorMessage = error instanceof Error ? error.message : "Failed to edit image";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsEditing(false);
     }
