@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { GeneratedVideo } from "../video-generation-hub";
+import { GeneratedVideo } from "../store/use-video-generation-store";
 
 interface GenerationHistoryProps {
   videos: GeneratedVideo[];

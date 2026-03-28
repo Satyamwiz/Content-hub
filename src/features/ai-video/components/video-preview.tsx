@@ -28,7 +28,7 @@ import {
   Wand2,
 } from "lucide-react";
 
-import { GeneratedVideo } from "../video-generation-hub";
+import { GeneratedVideo } from "../store/use-video-generation-store";
 import { downloadVideoFromUrl } from "@/lib/video-utils";
 
 interface VideoPreviewProps {

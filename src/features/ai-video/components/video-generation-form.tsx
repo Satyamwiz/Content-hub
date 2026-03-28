@@ -19,7 +19,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-import { VideoGenerationRequest } from "../video-generation-hub";
+import { VideoGenerationRequest } from "../store/use-video-generation-store";
 
 interface VideoGenerationFormProps {
   onGenerate: (request: VideoGenerationRequest) => void;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,211 +17,20 @@ import { useRouter } from "next/navigation";
 
 import { VideoGenerationForm } from "@/features/ai-video/components/video-generation-form";
 import { VideoPreview } from "@/features/ai-video/components/video-preview";
-import {
-  videoGenerationService,
-  VideoGenerationApiResponse,
-} from "@/services/video-generation.service";
 import { TutorialButton } from "@/features/tutorial/tutorial-button";
-
-export interface VideoGenerationRequest {
-  prompt: string;
-  image: File | null;
-  duration: number;
-  style: string;
-  quality: string;
-  aspectRatio: string;
-}
-
-export interface GeneratedVideo {
-  id: string;
-  prompt: string;
-  imageUrl: string;
-  videoUrl: string;
-  thumbnailUrl: string;
-  duration: number;
-  style: string;
-  quality: string;
-  aspectRatio: string;
-  createdAt: Date;
-  status: "generating" | "completed" | "failed";
-  progress: number;
-}
+import { useVideoGenerationStore, GeneratedVideo } from "@/features/ai-video/store/use-video-generation-store";
 
 export function VideoGenerationHub() {
   const router = useRouter();
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [currentVideo, setCurrentVideo] = useState<GeneratedVideo | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [generationHistory, setGenerationHistory] = useState<GeneratedVideo[]>([
-    // Mock data for demonstration
-    {
-      id: "1",
-      prompt: "A majestic sunset over mountains with birds flying",
-      imageUrl: "/placeholder-landscape.jpg",
-      videoUrl: "/sample-video-1.mp4",
-      thumbnailUrl: "/placeholder-landscape.jpg",
-      duration: 5,
-      style: "cinematic",
-      quality: "hd",
-      aspectRatio: "16:9",
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      status: "completed",
-      progress: 100,
-    },
-    {
-      id: "2",
-      prompt: "Ocean waves crashing on a rocky shore",
-      imageUrl: "/placeholder-ocean.jpg",
-      videoUrl: "/sample-video-2.mp4",
-      thumbnailUrl: "/placeholder-ocean.jpg",
-      duration: 8,
-      style: "natural",
-      quality: "4k",
-      aspectRatio: "16:9",
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      status: "completed",
-      progress: 100,
-    },
-  ]);
-
-  const handleGenerateVideo = async (request: VideoGenerationRequest) => {
-    if (!request.image) {
-      console.error("No image provided for video generation");
-      return;
-    }
-
-    setIsGenerating(true);
-    let progressInterval: NodeJS.Timeout | null = null;
-
-    // Helper to schedule a single randomised tick, then schedule the next
-    const scheduleNextTick = (videoId: string) => {
-      // Random delay: 2.6-3.6 seconds per tick, giving ~1m 20s to 1m 50s for 0→95%
-      const delay = Math.random() * 1000 + 2600;
-      progressInterval = setTimeout(() => {
-        setCurrentVideo((prev) => {
-          if (prev && prev.id === videoId && prev.progress < 95) {
-            // Random increment: 1-5% per tick
-            const increment = Math.random() * 4 + 1;
-            const newProgress = Math.min(
-              parseFloat((prev.progress + increment).toFixed(1)),
-              95
-            );
-            const updatedVideo = { ...prev, progress: newProgress };
-
-            setGenerationHistory((prevHistory) =>
-              prevHistory.map((v) => (v.id === videoId ? updatedVideo : v))
-            );
-
-            // Schedule next tick only if still generating
-            scheduleNextTick(videoId);
-            return updatedVideo;
-          }
-          return prev;
-        });
-      }, delay);
-    };
-
-    try {
-      // Create new video entry with generating status
-      const newVideo: GeneratedVideo = {
-        id: Date.now().toString(),
-        prompt: request.prompt,
-        imageUrl: URL.createObjectURL(request.image),
-        videoUrl: "",
-        thumbnailUrl: URL.createObjectURL(request.image),
-        duration: request.duration,
-        style: request.style,
-        quality: request.quality,
-        aspectRatio: request.aspectRatio,
-        createdAt: new Date(),
-        status: "generating",
-        progress: 5, // Start at 5% so the bar is immediately visible
-      };
-
-      setCurrentVideo(newVideo);
-      setGenerationHistory((prev) => [newVideo, ...prev]);
-
-      // Kick off the randomised slow progress ticks
-      scheduleNextTick(newVideo.id);
-
-      // Call the new API that handles Cloudinary upload
-      const formData = new FormData();
-      formData.append("image", request.image);
-      formData.append("prompt", request.prompt);
-
-      const response = await fetch("/api/generate-video", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate video");
-      }
-
-      const apiResponse = await response.json();
-
-      // Clear progress timeout
-      if (progressInterval) {
-        clearTimeout(progressInterval);
-      }
-
-      // Jump to 100% before showing the video
-      setCurrentVideo((prev) =>
-        prev ? { ...prev, progress: 100 } : null
-      );
-      setGenerationHistory((prev) =>
-        prev.map((v) => (v.id === newVideo.id ? { ...v, progress: 100 } : v))
-      );
-
-      // Wait a moment so user can see it hit 100%
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Complete generation with API response
-      const completedVideo: GeneratedVideo = {
-        ...newVideo,
-        status: "completed",
-        progress: 100,
-        videoUrl: apiResponse.videoUrl, // Use the Cloudinary URL
-        prompt: apiResponse.prompt,
-      };
-
-      setCurrentVideo(completedVideo);
-      setGenerationHistory((prev) =>
-        prev.map((video) => (video.id === newVideo.id ? completedVideo : video))
-      );
-
-      toast.success("Video generated and saved to your gallery!");
-    } catch (error) {
-      console.error("Video generation failed:", error);
-
-      // Clear progress timeout if it exists
-      if (progressInterval) {
-        clearTimeout(progressInterval);
-      }
-
-      setCurrentVideo((prev) =>
-        prev ? { ...prev, status: "failed", progress: 0 } : null
-      );
-      setGenerationHistory((prev) =>
-        prev.map((video) =>
-          video.id === currentVideo?.id
-            ? { ...video, status: "failed" as const, progress: 0 }
-            : video
-        )
-      );
-
-      // Set error message for user display
-      const errorMsg =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      setErrorMessage(errorMsg);
-
-      // Clear error message after 10 seconds
-      setTimeout(() => setErrorMessage(null), 10000);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  
+  const {
+    isGenerating,
+    currentVideo,
+    errorMessage,
+    generationHistory,
+    setErrorMessage,
+    generateVideo,
+  } = useVideoGenerationStore();
 
   const handleUploadToYouTube = (video: GeneratedVideo) => {
     if (video && video.videoUrl) {
@@ -314,7 +123,7 @@ export function VideoGenerationHub() {
           </CardHeader>
           <CardContent>
             <VideoGenerationForm
-              onGenerate={handleGenerateVideo}
+              onGenerate={generateVideo}
               isGenerating={isGenerating}
             />
           </CardContent>
