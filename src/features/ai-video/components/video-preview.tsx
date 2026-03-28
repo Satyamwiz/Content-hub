@@ -138,14 +138,6 @@ export function VideoPreview({
 
     return (
       <div className="space-y-4">
-        {/* ⚠️ Do Not Navigate Away Banner */}
-        <Alert className="border-amber-400 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-600">
-          <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <AlertDescription className="text-amber-800 dark:text-amber-300 font-medium text-sm">
-            ⚠️ <strong>Do not close or navigate away from this page</strong> — your video is being generated. Leaving now will cancel the process.
-          </AlertDescription>
-        </Alert>
-
         {/* Generation Animation */}
         <div className="aspect-video bg-gradient-to-br from-purple-50 via-violet-50 to-pink-50 dark:from-purple-950/40 dark:via-violet-950/30 dark:to-pink-950/40 rounded-lg flex items-center justify-center border border-purple-200 dark:border-purple-800 relative overflow-hidden">
           {/* Animated background pulse rings */}

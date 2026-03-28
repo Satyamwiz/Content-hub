@@ -463,11 +463,19 @@ export default function CollaboratorDashboard() {
                 {/* Contact Buttons */}
                 <div className="flex gap-2 pt-3 border-t">
                   {collab.email ? (
-                    <Button size="sm" variant="outline" className="flex-1 text-xs h-8" asChild>
-                      <a href={`mailto:${collab.email}`}>
-                        <Mail className="h-3 w-3 mr-1.5" />
-                        Contact
-                      </a>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1 text-xs h-8"
+                      onClick={() => {
+                        if (collab.email) {
+                          navigator.clipboard.writeText(collab.email);
+                          toast.success("Email copied to clipboard!");
+                        }
+                      }}
+                    >
+                      <Mail className="h-3 w-3 mr-1.5 shrink-0" />
+                      <span className="truncate">{collab.email}</span>
                     </Button>
                   ) : (
                     <Button size="sm" variant="outline" className="flex-1 text-xs h-8" disabled>

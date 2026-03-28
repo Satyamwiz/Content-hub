@@ -95,16 +95,16 @@ export function VideoGenerationHub() {
 
     // Helper to schedule a single randomised tick, then schedule the next
     const scheduleNextTick = (videoId: string) => {
-      // Random delay: 4–8 seconds per tick, giving ~2min for 0→85%
-      const delay = Math.random() * 4000 + 4000;
+      // Random delay: 1-3 seconds per tick, giving ~1min for 0→95%
+      const delay = Math.random() * 2000 + 1000;
       progressInterval = setTimeout(() => {
         setCurrentVideo((prev) => {
-          if (prev && prev.id === videoId && prev.progress < 85) {
-            // Tiny random increment: 0.5–2.5% per tick
-            const increment = Math.random() * 2 + 0.5;
+          if (prev && prev.id === videoId && prev.progress < 95) {
+            // Random increment: 1-5% per tick
+            const increment = Math.random() * 4 + 1;
             const newProgress = Math.min(
               parseFloat((prev.progress + increment).toFixed(1)),
-              85
+              95
             );
             const updatedVideo = { ...prev, progress: newProgress };
 
@@ -165,6 +165,17 @@ export function VideoGenerationHub() {
       if (progressInterval) {
         clearTimeout(progressInterval);
       }
+
+      // Jump to 100% before showing the video
+      setCurrentVideo((prev) =>
+        prev ? { ...prev, progress: 100 } : null
+      );
+      setGenerationHistory((prev) =>
+        prev.map((v) => (v.id === newVideo.id ? { ...v, progress: 100 } : v))
+      );
+
+      // Wait a moment so user can see it hit 100%
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Complete generation with API response
       const completedVideo: GeneratedVideo = {
