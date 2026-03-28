@@ -45,11 +45,11 @@ export async function GET(req: NextRequest) {
     const userAnalytics = await prisma.youTubeAnalytics.findFirst({
       where: { clerkId: userId },
       orderBy: { date: "desc" },
-      select: { subscribersGained: true },
+      select: { subscribersTotal: true },
     });
 
     // Use actual subscriber count or default to 0 if no analytics data
-    const mySubscribers = userAnalytics?.subscribersGained || 0;
+    const mySubscribers = userAnalytics?.subscribersTotal ?? 0;
 
     // Calculate range based on subscriber count
     const lowerBound = Math.floor(mySubscribers * (1 - rangePercent / 100));
@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
         // Get actual subscriber count from their YouTube analytics
         const collaboratorAnalytics = profile.user.youtubeAnalytics[0];
         const subscribersTotal =
-          collaboratorAnalytics?.subscribersGained || 1000;
+          collaboratorAnalytics?.subscribersTotal ?? 1000;
 
         // Calculate subscriber similarity (40% weight)
         const subscriberDiff = Math.abs(subscribersTotal - mySubscribers);
