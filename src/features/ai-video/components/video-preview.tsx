@@ -123,7 +123,7 @@ export function VideoPreview({
     const progress = video.progress;
     const estimatedSecondsLeft = Math.max(
       0,
-      Math.round(((100 - progress) / 100) * 120)
+      Math.round(((100 - progress) / 100) * 84)
     );
     const minutesLeft = Math.floor(estimatedSecondsLeft / 60);
     const secondsLeft = estimatedSecondsLeft % 60;
@@ -163,7 +163,7 @@ export function VideoPreview({
                 Generating Your Video…
               </h3>
               <p className="text-sm text-purple-600 dark:text-purple-300">
-                AI is crafting your video frame by frame
+                AI is crafting your video frame by frame, do not close this window
               </p>
             </div>
 
@@ -174,8 +174,8 @@ export function VideoPreview({
                 {minutesLeft > 0
                   ? `~${minutesLeft}m ${secondsLeft}s remaining`
                   : secondsLeft > 0
-                  ? `~${secondsLeft}s remaining`
-                  : "Finalising…"}
+                    ? `~${secondsLeft}s remaining`
+                    : "Finalising…"}
               </span>
             </div>
           </div>
@@ -220,22 +220,20 @@ export function VideoPreview({
                 return (
                   <div
                     key={step.label}
-                    className={`flex flex-col items-center gap-1 text-center transition-all duration-500 ${
-                      done
+                    className={`flex flex-col items-center gap-1 text-center transition-all duration-500 ${done
                         ? "text-purple-600 dark:text-purple-400"
                         : active
-                        ? "text-purple-500 dark:text-purple-300 animate-pulse"
-                        : "text-muted-foreground/40"
-                    }`}
+                          ? "text-purple-500 dark:text-purple-300 animate-pulse"
+                          : "text-muted-foreground/40"
+                      }`}
                   >
                     <div
-                      className={`p-1.5 rounded-full transition-all duration-500 ${
-                        done
+                      className={`p-1.5 rounded-full transition-all duration-500 ${done
                           ? "bg-purple-100 dark:bg-purple-900"
                           : active
-                          ? "bg-purple-50 dark:bg-purple-950 ring-1 ring-purple-300"
-                          : "bg-muted/30"
-                      }`}
+                            ? "bg-purple-50 dark:bg-purple-950 ring-1 ring-purple-300"
+                            : "bg-muted/30"
+                        }`}
                     >
                       {done ? <CheckCircle className="h-3.5 w-3.5 text-green-500" /> : step.icon}
                     </div>

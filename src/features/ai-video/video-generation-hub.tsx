@@ -95,8 +95,8 @@ export function VideoGenerationHub() {
 
     // Helper to schedule a single randomised tick, then schedule the next
     const scheduleNextTick = (videoId: string) => {
-      // Random delay: 1-3 seconds per tick, giving ~1min for 0→95%
-      const delay = Math.random() * 2000 + 1000;
+      // Random delay: 2.6-3.6 seconds per tick, giving ~1m 20s to 1m 50s for 0→95%
+      const delay = Math.random() * 1000 + 2600;
       progressInterval = setTimeout(() => {
         setCurrentVideo((prev) => {
           if (prev && prev.id === videoId && prev.progress < 95) {
