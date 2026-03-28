@@ -263,22 +263,7 @@ export default function CollaboratorDashboard() {
             </SelectContent>
           </Select>
 
-          {/* Dropdown 2 — Subscriber Range */}
-          <Select
-            value={rangePercent}
-            onValueChange={(v) => setRangePercent(v as RangeOption)}
-          >
-            <SelectTrigger className="w-[145px]" id="range-select">
-              <Target className="h-4 w-4 mr-1.5 text-muted-foreground" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">±10% range</SelectItem>
-              <SelectItem value="20">±20% range</SelectItem>
-              <SelectItem value="30">±30% range</SelectItem>
-              <SelectItem value="50">±50% range</SelectItem>
-            </SelectContent>
-          </Select>
+
         </div>
       </div>
 
@@ -380,12 +365,7 @@ export default function CollaboratorDashboard() {
                           {formatNumber(collab.subscribersTotal)} subs
                         </span>
                       )}
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] px-1.5 py-0 border ${getMatchColor(collab.similarity)}`}
-                      >
-                        {collab.similarity.toFixed(0)}% match
-                      </Badge>
+
                     </div>
                   </div>
                 </div>
