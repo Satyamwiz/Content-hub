@@ -1,4 +1,5 @@
 // Gemini AI Content Enhancement Service
+
 interface ContentEnhancementRequest {
   title: string;
   description: string;
@@ -15,9 +16,20 @@ interface ContentEnhancementResponse {
   error?: string;
 }
 
+export type EnhancementContext =
+  | "image-generation"
+  | "video-generation"
+  | "content-creation"
+  | "instagram-caption"
+  | "reel-script"
+  | "voiceover-script"
+  | "poem"
+  | "youtube-title"
+  | "youtube-description";
+
 interface PromptEnhancementRequest {
   prompt: string;
-  context: "image-generation" | "video-generation" | "content-creation";
+  context: EnhancementContext;
 }
 
 interface PromptEnhancementResponse {
@@ -89,62 +101,14 @@ export async function generateContentFromFileName(
 
 /**
  * Enhance prompts for different AI generation contexts
+ * Uses platform-specific system prompts for each context
  * @param request - Prompt and context information
- * @returns Enhanced prompt optimized for the specific use case
+ * @returns Enhanced prompt optimized for the specific platform/use case
  */
 export async function enhancePromptWithAI(
   request: PromptEnhancementRequest
 ): Promise<PromptEnhancementResponse> {
   try {
-    const contextPrompts = {
-      "image-generation": `You are an expert prompt engineer for AI image generation. Enhance this prompt to create more detailed, visually compelling, and technically precise descriptions for AI image generation. Focus on:
-
-- Visual details (lighting, composition, colors, style)
-- Artistic techniques and mediums  
-- Mood and atmosphere
-- Technical camera settings if applicable
-- Art styles and influences
-
-Original prompt: "${request.prompt}"
-
-Provide an enhanced version that will generate better AI images. Respond with only the enhanced prompt in this JSON format:
-{
-  "enhancedPrompt": "enhanced prompt here"
-}`,
-
-      "video-generation": `You are an expert prompt engineer for AI video generation. Enhance this prompt to create more dynamic, cinematic, and engaging descriptions for AI video generation. Focus on:
-
-- Camera movements and angles
-- Scene dynamics and transitions  
-- Visual storytelling elements
-- Lighting and cinematography
-- Action sequences and timing
-- Style and genre elements
-
-Original prompt: "${request.prompt}"
-
-Provide an enhanced version that will generate better AI videos. Respond with only the enhanced prompt in this JSON format:
-{
-  "enhancedPrompt": "enhanced prompt here"
-}`,
-
-      "content-creation": `You are an expert content creator and copywriter. Enhance this prompt to be more engaging, clear, and effective. Focus on:
-
-- Clarity and specificity
-- Emotional engagement
-- Call-to-action elements
-- Target audience appeal
-- Brand voice consistency
-- SEO and discoverability
-
-Original prompt: "${request.prompt}"
-
-Provide an enhanced version that will be more effective for content creation. Respond with only the enhanced prompt in this JSON format:
-{
-  "enhancedPrompt": "enhanced prompt here"
-}`,
-    };
-
     const response = await fetch("/api/enhance-content", {
       method: "POST",
       headers: {
@@ -156,7 +120,7 @@ Provide an enhanced version that will be more effective for content creation. Re
         tags: "",
         context: "enhance_prompt",
         promptContext: request.context,
-        enhancementPrompt: contextPrompts[request.context],
+        // No enhancementPrompt — let the server use its built-in system prompts
       }),
     });
 
@@ -193,5 +157,33 @@ Provide an enhanced version that will be more effective for content creation. Re
       success: false,
       error: errorMessage,
     };
+  }
+}
+
+/**
+ * Generate a Gemini-powered caption for an image
+ * @param prompt - The image prompt or description
+ * @param platform - Target platform for caption style
+ * @returns AI-generated caption
+ */
+export async function generateCaptionWithAI(
+  prompt: string,
+  platform: "instagram" | "general" = "instagram"
+): Promise<string> {
+  try {
+    const result = await enhancePromptWithAI({
+      prompt: `Generate a ${platform === "instagram" ? "compelling Instagram" : "engaging"} caption for an image described as: "${prompt}". Include relevant hashtags.`,
+      context: platform === "instagram" ? "instagram-caption" : "content-creation",
+    });
+
+    if (result.success && result.enhanced) {
+      return result.enhanced.enhancedPrompt || result.enhanced.enhancedTitle || prompt;
+    }
+
+    throw new Error(result.error || "Failed to generate caption");
+  } catch (error) {
+    console.error("Caption generation error:", error);
+    // Return a fallback template caption
+    return `✨ ${prompt} ✨\n\n#aiart #digitalcreative #contentcreator`;
   }
 }

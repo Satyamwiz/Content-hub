@@ -101,34 +101,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const enhancementPrompt = `You are an AI Tweet Enhancer. Your task is to rewrite or improve a Tweet based on the user's input and limited creator profile context.
+    const enhancementPrompt = `You are an AI Tweet enhancer. Your job is to re-present the user's tweet more clearly and effectively in the requested tone — without changing the core message.
 
-🎯 Primary Rule
-The user's explicit preference ("how they want the tweet to sound") takes the highest priority. Use profile data only as background to maintain brand consistency, but never override user intent.
-
-🧍 User Input
 User's Draft Tweet: ${tweetText}
-User's Enhancement Preference: ${preferredTone} (Examples: professional, funny, emotional, bold, sarcastic, minimalist, promotional, storytelling, etc.)${profileContextString}
+Requested Tone: ${preferredTone}${profileContextString}
 
-🧩 Task
-Enhance or rewrite the tweet to align with the user's selected tone.
-Incorporate relevant style cues from the profile (like tone, focus, or goals) only if they complement the user's tone preference.
-Maintain clarity, grammar, and engagement within 280 characters.
-Return three improved versions:
-• Clean version – safe and polished
-• Viral version – catchy, platform-optimized
-• Creative version – experimental and bold
+Keep the same idea and intent. Just make it sound better in the requested tone. Stay under 280 characters.
 
-⚙️ Output Format
-Return ONLY a valid JSON object with this exact structure:
+Return three versions:
+- Clean version: polished and clear
+- Viral version: more engaging and shareable  
+- Creative version: a bolder take on the same idea
+
+Return ONLY this JSON:
 {
   "clean_version": "string",
-  "viral_version": "string", 
+  "viral_version": "string",
   "creative_version": "string",
-  "reasoning": "string (short summary of tone adaptation)"
-}
-
-Important: Return ONLY the JSON object, no additional text or formatting.`;
+  "reasoning": "one sentence explaining the tone adaptation"
+}`;
 
     const result = await model.generateContent(enhancementPrompt);
     const response = await result.response;

@@ -30,6 +30,7 @@ import { aiImageHelperService } from "@/services/ai-image-helper.service";
 import { InstagramAuth } from "@/lib/instagram-auth";
 import { InstagramAuthModal } from "@/components/instagram-auth-modal";
 import { InstagramDisconnectDialog } from "@/components/instagram-disconnect-dialog";
+import { PromptEnhancerButton } from "@/components/shared/prompt-enhancer";
 import { toast } from "sonner";
 
 interface InstagramPublisherProps {
@@ -665,12 +666,22 @@ export function InstagramPublisher({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="caption">Caption</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="caption">Caption</Label>
+                  <PromptEnhancerButton
+                    prompt={caption}
+                    onPromptChange={setCaption}
+                    context="instagram-caption"
+                    disabled={!isAuthenticated}
+                    maxLength={2200}
+                    label="Enhance Caption"
+                  />
+                </div>
                 <Textarea
                   id="caption"
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
-                  placeholder="Write your Instagram caption here..."
+                  placeholder="Write your Instagram caption here... (AI can enhance it with hashtags & hooks)"
                   rows={4}
                   className="resize-none"
                   disabled={!isAuthenticated}

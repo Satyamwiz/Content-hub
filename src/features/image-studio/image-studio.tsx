@@ -31,6 +31,7 @@ import {
 import { aiImageHelperService } from "@/services/ai-image-helper.service";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { generateCaptionWithAI } from "@/services/content-enhancement.service";
 
 interface ImageStudioProps {
   onImageGenerated?: (imageUrl: string, caption: string) => void;
@@ -59,6 +60,25 @@ export function ImageStudio({ onImageGenerated }: ImageStudioProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<"ready" | "error">("ready");
+
+  // Load trend prompt from localStorage if navigated from Trends page
+  useEffect(() => {
+    const trendData = localStorage.getItem("trend-content-prompt");
+    if (trendData) {
+      try {
+        const parsed = JSON.parse(trendData);
+        if (parsed.prompt) {
+          setPrompt(parsed.prompt);
+          setActiveTab("generate");
+          toast.success(`🔥 Trend topic loaded: "${parsed.topic || 'trending'}". Click Enhance with AI or Generate!`);
+        }
+      } catch (e) {
+        // ignore parse errors
+      } finally {
+        localStorage.removeItem("trend-content-prompt");
+      }
+    }
+  }, []);
 
   const handleGenerateImage = async () => {
     if (!prompt.trim()) {
@@ -161,37 +181,8 @@ export function ImageStudio({ onImageGenerated }: ImageStudioProps) {
   const generateCaptionFromPrompt = async (
     imagePrompt: string
   ): Promise<string> => {
-    // Simple caption generation based on prompt
-    const captionTemplates = [
-      `✨ ${imagePrompt} ✨`,
-      `Beautiful ${imagePrompt.toLowerCase()} that caught my eye today 🌟`,
-      `Just created this amazing ${imagePrompt.toLowerCase()}! What do you think? 🎨`,
-      `Artistic take on ${imagePrompt.toLowerCase()} - created with AI magic ✨`,
-      `Exploring the beauty of ${imagePrompt.toLowerCase()} through digital art 🌈`,
-    ];
-
-    // Select a random template and customize it
-    const template =
-      captionTemplates[Math.floor(Math.random() * captionTemplates.length)];
-
-    // Add some hashtags based on the prompt
-    const hashtags = generateHashtags(imagePrompt);
-    return `${template}\n\n${hashtags}`;
-  };
-
-  const generateHashtags = (prompt: string): string => {
-    const words = prompt.toLowerCase().split(" ").slice(0, 3);
-    const baseHashtags = words
-      .map((word) => `#${word.replace(/[^a-z0-9]/g, "")}`)
-      .filter((tag) => tag.length > 1);
-
-    const additionalHashtags = [
-      "#aiart",
-      "#digitalart",
-      "#creative",
-      "#artwork",
-    ];
-    return [...baseHashtags, ...additionalHashtags.slice(0, 3)].join(" ");
+    // Use real Gemini AI for Instagram-optimized captions
+    return generateCaptionWithAI(imagePrompt, "instagram");
   };
 
   const handleCopyCaption = () => {

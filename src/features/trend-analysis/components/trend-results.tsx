@@ -1,6 +1,4 @@
-"use client";
-
-import React from "react";
+import React, { useState } from "react";
 import {
   TrendAnalysisResponse,
   formatViewCount,
@@ -19,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import {
   Trophy,
   Eye,
@@ -31,7 +31,10 @@ import {
   Hash,
   TrendingDown,
   Activity,
+  Sparkles,
+  Wand2,
 } from "lucide-react";
+
 import { format } from "date-fns";
 
 interface TrendResultsProps {
@@ -44,7 +47,20 @@ const getYoutubeThumbnail = (videoId: string, quality: "default" | "medium" | "h
 };
 
 export function TrendResults({ data }: TrendResultsProps) {
+  const router = useRouter();
   const { domain, region, generated_at, top_topics, trending_hashtags, metadata } = data;
+
+  const handleCreateContentFromTrend = (topic: string) => {
+    // Store the trend topic for pre-populating the studio
+    const trendData = {
+      prompt: `Create engaging content about the trending topic: "${topic}". Make it visually compelling, informative, and optimized for social media engagement.`,
+      source: "trend",
+      topic,
+    };
+    localStorage.setItem("trend-content-prompt", JSON.stringify(trendData));
+    toast.success(`Opening Image Studio with trend: "${topic}"`);
+    router.push("/studio");
+  };
 
   return (
     <div className="space-y-6">
@@ -156,14 +172,25 @@ export function TrendResults({ data }: TrendResultsProps) {
                   </div>
                 </div>
 
-                {/* Composite Score */}
-                <div className="text-right min-w-[100px]">
-                  <div className="text-3xl font-bold text-primary">
-                    {topic.composite_score_percent}%
+                {/* Composite Score + Create Content */}
+                <div className="flex flex-col items-end gap-2 min-w-[120px]">
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-primary">
+                      {topic.composite_score_percent}%
+                    </div>
+                    <div className="text-xs text-muted-foreground font-medium">
+                      Composite Score
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground font-medium">
-                    Composite Score
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs gap-1 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-300 dark:hover:bg-purple-950"
+                    onClick={() => handleCreateContentFromTrend(topic.topic)}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Create AI Content
+                  </Button>
                 </div>
               </div>
             </CardHeader>

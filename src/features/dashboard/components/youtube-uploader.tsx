@@ -32,6 +32,7 @@ import {
   enhanceContentWithAI,
   generateContentFromFileName,
 } from "@/services/content-enhancement.service";
+import { PromptEnhancerButton } from "@/components/shared/prompt-enhancer";
 import { toast } from "sonner";
 
 interface UploadedVideo {
@@ -375,20 +376,39 @@ export function YouTubeUploader() {
         {/* Video details */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="title">Title</Label>
+              <PromptEnhancerButton
+                prompt={title}
+                onPromptChange={setTitle}
+                context="youtube-title"
+                disabled={!title.trim() || enhancing || uploading}
+                maxLength={100}
+                label="Optimize Title"
+              />
+            </div>
             <Input
               id="title"
-              placeholder="Video title"
+              placeholder="Video title (AI can optimize for SEO & clicks)"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="description">Description</Label>
+              <PromptEnhancerButton
+                prompt={description}
+                onPromptChange={setDescription}
+                context="youtube-description"
+                disabled={!description.trim() || enhancing || uploading}
+                label="Enhance Description"
+              />
+            </div>
             <Textarea
               id="description"
-              placeholder="Video description"
+              placeholder="Video description (AI can expand with keywords, structure & CTAs)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}

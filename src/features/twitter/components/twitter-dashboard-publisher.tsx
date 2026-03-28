@@ -22,6 +22,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { TwitterAuth } from "./twitter-auth";
+import { TweetEnhancementModal } from "./tweet-enhancement-modal";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 
@@ -49,6 +50,7 @@ export function TwitterDashboardPublisher({}) {
   );
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [showEnhanceModal, setShowEnhanceModal] = useState(false);
 
   const maxLength = 280;
   const remainingChars = maxLength - text.length;
@@ -278,6 +280,14 @@ export function TwitterDashboardPublisher({}) {
 
   return (
     <Card>
+      {/* Tweet Enhancement Modal */}
+      <TweetEnhancementModal
+        isOpen={showEnhanceModal}
+        onClose={() => setShowEnhanceModal(false)}
+        originalTweet={text}
+        onSelectEnhancedTweet={(enhanced) => setText(enhanced)}
+      />
+
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Twitter className="h-5 w-5 text-blue-500" />
@@ -316,25 +326,41 @@ export function TwitterDashboardPublisher({}) {
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
               <Button
-                variant="outline"
-                size="sm"
-                onClick={generateAITweet}
-                disabled={isGeneratingAI || !text.trim()}
-              >
-                {isGeneratingAI ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    AI Enhance
-                  </>
-                )}
-              </Button>
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (!text.trim()) {
+                      toast.error("Please enter some tweet text to enhance");
+                      return;
+                    }
+                    setShowEnhanceModal(true);
+                  }}
+                  disabled={isPublishing}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Enhance Tweet
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={generateAITweet}
+                  disabled={isGeneratingAI || !text.trim()}
+                  title="Generate a full tweet from your topic idea"
+                >
+                  {isGeneratingAI ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-3 w-3" />
+                      From Idea
+                    </>
+                  )}
+                </Button>
               <Button
                 onClick={handlePublish}
                 disabled={isPublishing || !text.trim() || remainingChars < 0}

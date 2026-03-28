@@ -15,11 +15,15 @@ import {
   Wand2,
   Copy,
   RotateCcw,
-  Save,
   BookOpen,
   Lightbulb,
   Clock,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { enhancePromptWithAI } from "@/services/content-enhancement.service";
+import { PromptEnhancerButton } from "@/components/shared/prompt-enhancer";
 
 interface TextEditorProps {
   value: string;
@@ -125,39 +129,39 @@ export function TextEditor({
   };
 
   const handleAIGenerate = async (prompt: string) => {
+    if (!prompt.trim()) {
+      toast.error("Please select a prompt to generate content");
+      return;
+    }
     setIsGenerating(true);
-    // Simulate AI generation
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const result = await enhancePromptWithAI({
+        prompt: prompt,
+        context: mode === "poem" ? "poem" : "reel-script",
+      });
 
-    const aiGeneratedContent =
-      mode === "poem"
-        ? `Generated poem based on: "${prompt}"
-
-Stars align in perfect harmony,
-As dreams take flight on wings of hope.
-Each moment holds unlimited possibility,
-When we learn to courageously cope.
-
-Through challenges that test our will,
-We discover strength we never knew.
-The journey shapes our character still,
-Making us better through and through.`
-        : `Generated script for: "${prompt}"
-
-Hook: Here's the game-changing insight everyone needs to hear!
-
-Main Content:
-Most people struggle with this because they're missing one crucial element. Let me break it down for you in 3 simple steps:
-
-1. First, you need to understand the foundation
-2. Then, you apply this specific technique
-3. Finally, you track your progress consistently
-
-Call to Action:
-Try this today and let me know how it works for you! Follow for more tips like this.`;
-
-    onChange(aiGeneratedContent);
-    setIsGenerating(false);
+      if (result.success && result.enhanced) {
+        const generated =
+          result.enhanced.enhancedPrompt ||
+          result.enhanced.enhancedTitle ||
+          prompt;
+        onChange(generated);
+        toast.success(
+          mode === "poem"
+            ? "✨ Poem generated with AI!"
+            : "✨ Reel script generated with AI!"
+        );
+      } else {
+        throw new Error(result.error || "AI generation failed");
+      }
+    } catch (error) {
+      console.error("AI generation error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to generate content"
+      );
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleCopyText = () => {
@@ -297,6 +301,15 @@ Try this today and let me know how it works for you! Follow for more tips like t
           placeholder={placeholder}
           className="min-h-[400px] resize-none font-mono text-sm leading-relaxed"
         />
+        <div className="flex items-center justify-end">
+          <PromptEnhancerButton
+            prompt={value}
+            onPromptChange={onChange}
+            context={mode === "poem" ? "poem" : "reel-script"}
+            disabled={!value.trim()}
+            label={mode === "poem" ? "Enhance Poem" : "Enhance Script"}
+          />
+        </div>
       </div>
 
       {/* Stats */}

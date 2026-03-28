@@ -25,6 +25,9 @@ import { VoiceSettingsPanel } from "@/features/voiceover/components/voice-settin
 import { MediaPlayer } from "@/features/voiceover/components/media-player";
 import { OutputControls } from "@/features/voiceover/components/output-controls";
 import { TutorialButton } from "@/features/tutorial/tutorial-button";
+import { PromptEnhancerButton } from "@/components/shared/prompt-enhancer";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface UploadedFile {
   file: File;
@@ -49,6 +52,7 @@ interface GenerationResult {
 
 export function VoiceoverStudio() {
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
+  const [voiceScript, setVoiceScript] = useState("");
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>({
     language: "en-US",
     voiceStyle: "neutral",
@@ -250,6 +254,45 @@ export function VoiceoverStudio() {
                 onFileUpload={handleFileUpload}
                 uploadedFile={uploadedFile}
               />
+            </CardContent>
+          </Card>
+
+          {/* Script Input */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileAudio className="h-5 w-5" />
+                Script / Narration Text
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="voiceover-script" className="text-sm">
+                    Enter your script for voiceover generation
+                  </Label>
+                  <PromptEnhancerButton
+                    prompt={voiceScript}
+                    onPromptChange={setVoiceScript}
+                    context="voiceover-script"
+                    disabled={!voiceScript.trim()}
+                    label="Optimize for Speech"
+                  />
+                </div>
+                <Textarea
+                  id="voiceover-script"
+                  value={voiceScript}
+                  onChange={(e) => setVoiceScript(e.target.value)}
+                  placeholder="Write or paste your narration script here... AI will optimize it for natural spoken delivery with proper pacing, emphasis cues, and phonetic clarity."
+                  rows={6}
+                  className="resize-none text-sm leading-relaxed"
+                  disabled={isGenerating}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {voiceScript.length} characters •{" "}
+                  {voiceScript.trim() ? `~${Math.ceil(voiceScript.split(" ").length / 130)} min read` : "Enter script above"}
+                </p>
+              </div>
             </CardContent>
           </Card>
 
