@@ -112,21 +112,20 @@ export async function GET(req: NextRequest) {
       );
     };
 
+    // Array of 30 diverse random subscriber counts for fallback
+    const fallbackSubscriberCounts = [
+      1200, 4500, 8900, 15000, 2200, 6700, 11500, 34000, 5600, 2900,
+      18000, 42000, 13400, 7800, 3100, 9500, 24000, 3800, 10500, 52000,
+      1600, 6100, 27500, 9200, 4100, 19000, 32000, 8400, 14200, 21000
+    ];
+
     // Process collaborators and calculate similarity
     const processedCollaborators: CollaboratorMatch[] = potentialCollaborators
-      .map((profile) => {
+      .map((profile, index) => {
         // Get actual subscriber count from their YouTube analytics
         const collaboratorAnalytics = profile.user.youtubeAnalytics[0];
         
-        let fallbackSubscribers = 1000;
-        if (profile.clerkId) {
-          let hash = 0;
-          for (let i = 0; i < profile.clerkId.length; i++) {
-            hash = profile.clerkId.charCodeAt(i) + ((hash << 5) - hash);
-          }
-          hash = Math.abs(hash);
-          fallbackSubscribers = 1200 + (hash % 45000);
-        }
+        const fallbackSubscribers = fallbackSubscriberCounts[index % fallbackSubscriberCounts.length];
 
         const subscribersTotal =
           collaboratorAnalytics?.subscribersTotal ?? fallbackSubscribers;
