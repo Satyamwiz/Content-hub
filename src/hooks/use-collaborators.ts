@@ -11,7 +11,8 @@ export interface UseCollaboratorsResult {
 }
 
 export function useCollaborators(
-  rangePercent: number = 20
+  rangePercent: number = 20,
+  nicheOnly: boolean = false
 ): UseCollaboratorsResult {
   const [collaborators, setCollaborators] = useState<CollaboratorMatch[]>([]);
   const [mySubscribers, setMySubscribers] = useState<number | null>(null);
@@ -27,9 +28,13 @@ export function useCollaborators(
       setLoading(true);
       setError(null);
 
-      const response = await fetch(
-        `/api/collaborators?range=${rangePercent}&limit=10`
-      );
+      const params = new URLSearchParams({
+        range: rangePercent.toString(),
+        limit: "30",
+        nicheOnly: nicheOnly.toString(),
+      });
+
+      const response = await fetch(`/api/collaborators?${params.toString()}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -57,7 +62,8 @@ export function useCollaborators(
 
   useEffect(() => {
     fetchCollaborators();
-  }, [rangePercent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rangePercent, nicheOnly]);
 
   return {
     collaborators,

@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -14,32 +13,67 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Users,
   Mail,
   Globe,
   RefreshCw,
-  UserPlus,
-  Settings,
   Eye,
   EyeOff,
+  Lock,
+  Unlock,
+  Youtube,
+  Instagram,
+  Twitter,
+  Clock,
+  Target,
+  Tv2,
+  Sparkles,
 } from "lucide-react";
 import { useCollaborators } from "@/hooks/use-collaborators";
 import { toast } from "sonner";
 
+type ViewMode = "all" | "niche";
+type RangeOption = "10" | "20" | "30" | "50";
+
+const PLATFORM_ICONS: Record<string, React.ReactNode> = {
+  YouTube: <Youtube className="h-3 w-3" />,
+  Instagram: <Instagram className="h-3 w-3" />,
+  Twitter: <Twitter className="h-3 w-3" />,
+  X: <Twitter className="h-3 w-3" />,
+};
+
+const NICHE_COLORS: Record<string, string> = {
+  Tech: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+  Travel: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+  Food: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20",
+  Fitness: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+  Fashion: "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20",
+  Gaming: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+  Finance: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
+  Education: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20",
+  Lifestyle: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20",
+  Comedy: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+};
+
+const getBadgeColor = (genre: string) =>
+  NICHE_COLORS[genre] || "bg-muted text-muted-foreground";
+
 export default function CollaboratorDashboard() {
-  const [rangePercent, setRangePercent] = useState(20);
+  const [viewMode, setViewMode] = useState<ViewMode>("all");
+  const [rangePercent, setRangePercent] = useState<RangeOption>("20");
   const [isDiscoverable, setIsDiscoverable] = useState(false);
   const [discoverableLoading, setDiscoverableLoading] = useState(false);
-  const { collaborators, mySubscribers, searchRange, loading, error, refetch } =
-    useCollaborators(rangePercent);
+  const [profileLoading, setProfileLoading] = useState(true);
 
-  // Load discoverable state on component mount
+  const { collaborators, mySubscribers, searchRange, loading, error, refetch } =
+    useCollaborators(parseInt(rangePercent), viewMode === "niche");
+
+  // Load discoverable state on mount
   useEffect(() => {
     const fetchDiscoverableStatus = async () => {
       try {
+        setProfileLoading(true);
         const response = await fetch("/api/profile");
         if (response.ok) {
           const data = await response.json();
@@ -47,38 +81,33 @@ export default function CollaboratorDashboard() {
             setIsDiscoverable(data.profile.discoverable || false);
           }
         }
-      } catch (error) {
-        console.error("Error fetching discoverable status:", error);
+      } catch (err) {
+        console.error("Error fetching discoverable status:", err);
+      } finally {
+        setProfileLoading(false);
       }
     };
-
     fetchDiscoverableStatus();
   }, []);
 
-  const handleDiscoverableToggle = async (checked: boolean) => {
+  const handleDiscoverableToggle = async () => {
+    const next = !isDiscoverable;
     setDiscoverableLoading(true);
     try {
       const response = await fetch("/api/profile/discoverable", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ discoverable: checked }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discoverable: next }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to update discoverable status");
-      }
-
-      setIsDiscoverable(checked);
+      if (!response.ok) throw new Error("Failed to update");
+      setIsDiscoverable(next);
       toast.success(
-        checked
-          ? "You are now discoverable by other creators"
-          : "You are no longer discoverable by other creators"
+        next
+          ? "Your profile is now public — other creators can find you!"
+          : "Your profile is now private."
       );
-    } catch (error) {
-      toast.error("Failed to update discoverable status");
-      console.error("Error updating discoverable status:", error);
+    } catch {
+      toast.error("Failed to update profile visibility.");
     } finally {
       setDiscoverableLoading(false);
     }
@@ -92,25 +121,37 @@ export default function CollaboratorDashboard() {
 
   const getInitials = (name: string | null) => {
     if (!name) return "??";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+  };
+
+  const getMatchColor = (pct: number) => {
+    if (pct >= 70) return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+    if (pct >= 40) return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
+    return "bg-muted text-muted-foreground";
+  };
+
+  const timeAgo = (date: Date) => {
+    const diff = Date.now() - new Date(date).getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days === 0) return "Active today";
+    if (days === 1) return "Active yesterday";
+    if (days < 7) return `Active ${days}d ago`;
+    if (days < 30) return `Active ${Math.floor(days / 7)}w ago`;
+    return `Active ${Math.floor(days / 30)}mo ago`;
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-7xl mx-auto">
+
+      {/* ── Page Header ──────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Users className="h-6 w-6" />
-            Find Collaborators
-          </h2>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Users className="h-7 w-7 text-primary" />
+            Collaborators
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Connect with creators who have similar subscriber counts
+            Discover creators to collaborate with based on niche and audience size
           </p>
         </div>
         <Button
@@ -118,133 +159,164 @@ export default function CollaboratorDashboard() {
           disabled={loading}
           variant="outline"
           size="sm"
+          className="self-start sm:self-auto"
         >
-          <RefreshCw
-            className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-          />
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
       </div>
 
-      {/* Stats & Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Your Stats & Search Range</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {mySubscribers !== null ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-3 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Your Subscribers
-                </p>
-                <p className="text-2xl font-bold">
-                  {formatNumber(mySubscribers)}
-                </p>
-              </div>
-              {searchRange && (
-                <>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      Search Range
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {formatNumber(searchRange.min)} -{" "}
-                      {formatNumber(searchRange.max)}
-                    </p>
-                  </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">Range</p>
-                    <Select
-                      value={rangePercent.toString()}
-                      onValueChange={(value) =>
-                        setRangePercent(parseInt(value))
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="10">±10%</SelectItem>
-                        <SelectItem value="20">±20%</SelectItem>
-                        <SelectItem value="30">±30%</SelectItem>
-                        <SelectItem value="50">±50%</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
-            </div>
-          ) : loading ? (
-            <Skeleton className="h-20 w-full" />
-          ) : null}
-        </CardContent>
-      </Card>
-
-      {/* Discoverability Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Collaboration Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="flex items-center gap-3">
+      {/* ── Profile Visibility Banner ─────────────────────────────── */}
+      {!profileLoading && (
+        <div
+          className={`rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+            isDiscoverable
+              ? "bg-emerald-500/5 border-emerald-500/20"
+              : "bg-amber-500/5 border-amber-500/20"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2 rounded-full ${
+                isDiscoverable ? "bg-emerald-500/15" : "bg-amber-500/15"
+              }`}
+            >
               {isDiscoverable ? (
-                <Eye className="h-5 w-5 text-green-600" />
+                <Eye className="h-5 w-5 text-emerald-500" />
               ) : (
-                <EyeOff className="h-5 w-5 text-muted-foreground" />
+                <EyeOff className="h-5 w-5 text-amber-500" />
               )}
-              <div>
-                <Label htmlFor="discoverable" className="text-base font-medium">
-                  Make my profile discoverable
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Allow other creators with similar subscriber counts to find
-                  you for collaborations
-                </p>
-              </div>
             </div>
-            <Switch
-              id="discoverable"
-              checked={isDiscoverable}
-              onCheckedChange={handleDiscoverableToggle}
-              disabled={discoverableLoading}
-            />
-          </div>
-          {isDiscoverable && (
-            <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-              <p className="text-sm text-green-700 dark:text-green-300">
-                ✓ Your profile is visible to other creators looking for
-                collaborators
+            <div>
+              <p className="font-semibold text-sm">
+                {isDiscoverable
+                  ? "Your profile is public"
+                  : "Your profile is private"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {isDiscoverable
+                  ? "Other creators can find and contact you for collaborations"
+                  : "Other creators cannot discover you — enable to appear in their search"}
               </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Error State */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+          </div>
+          <Button
+            onClick={handleDiscoverableToggle}
+            disabled={discoverableLoading}
+            size="sm"
+            variant={isDiscoverable ? "outline" : "default"}
+            className={
+              isDiscoverable
+                ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 shrink-0"
+                : "shrink-0"
+            }
+          >
+            {discoverableLoading ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : isDiscoverable ? (
+              <Lock className="h-4 w-4 mr-2" />
+            ) : (
+              <Unlock className="h-4 w-4 mr-2" />
+            )}
+            {isDiscoverable ? "Make Private" : "Make Profile Public"}
+          </Button>
+        </div>
       )}
 
-      {/* Loading State */}
+      {/* ── Filters Row ──────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        {/* Stats pill */}
+        {mySubscribers !== null && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted rounded-full px-3 py-1.5">
+            <Youtube className="h-4 w-4" />
+            <span>
+              <span className="font-semibold text-foreground">{formatNumber(mySubscribers)}</span>{" "}
+              subscribers
+            </span>
+            {searchRange && (
+              <>
+                <span className="opacity-40">·</span>
+                <span>
+                  Range:{" "}
+                  <span className="font-semibold text-foreground">
+                    {formatNumber(searchRange.min)}–{formatNumber(searchRange.max)}
+                  </span>
+                </span>
+              </>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2 sm:ml-auto flex-wrap">
+          {/* Dropdown 1 — View Mode */}
+          <Select
+            value={viewMode}
+            onValueChange={(v) => setViewMode(v as ViewMode)}
+          >
+            <SelectTrigger className="w-[185px]" id="view-mode-select">
+              <Sparkles className="h-4 w-4 mr-1.5 text-primary" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Collaborators</SelectItem>
+              <SelectItem value="niche">Same Niche Only</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Dropdown 2 — Subscriber Range */}
+          <Select
+            value={rangePercent}
+            onValueChange={(v) => setRangePercent(v as RangeOption)}
+          >
+            <SelectTrigger className="w-[145px]" id="range-select">
+              <Target className="h-4 w-4 mr-1.5 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">±10% range</SelectItem>
+              <SelectItem value="20">±20% range</SelectItem>
+              <SelectItem value="30">±30% range</SelectItem>
+              <SelectItem value="50">±50% range</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* ── Error State ──────────────────────────────────────────── */}
+      {error && (
+        <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      {/* ── Results count ────────────────────────────────────────── */}
+      {!loading && !error && collaborators.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          Showing{" "}
+          <span className="font-semibold text-foreground">{collaborators.length}</span>{" "}
+          {viewMode === "niche" ? "same-niche " : ""}creator
+          {collaborators.length !== 1 ? "s" : ""}
+        </p>
+      )}
+
+      {/* ── Loading Skeletons ─────────────────────────────────────── */}
       {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
+            <Card key={i} className="overflow-hidden">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-3 mb-4">
+                  <Skeleton className="h-12 w-12 rounded-full shrink-0" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
-                    <Skeleton className="h-3 w-full" />
                   </div>
+                </div>
+                <Skeleton className="h-3 w-full mb-2" />
+                <Skeleton className="h-3 w-4/5 mb-4" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
                 </div>
               </CardContent>
             </Card>
@@ -252,152 +324,170 @@ export default function CollaboratorDashboard() {
         </div>
       )}
 
-      {/* Collaborators Grid */}
-      {!loading && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {collaborators.length === 0 ? (
-            <div className="col-span-full text-center py-8">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-lg font-medium">No collaborators found</p>
-              <p className="text-muted-foreground">
-                Try expanding your search range or sync your YouTube analytics
-                first.
-              </p>
-            </div>
-          ) : (
-            collaborators.map((collab) => (
-              <Card
-                key={collab.clerkId}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    {/* Header */}
-                    <div className="flex items-start gap-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {getInitials(collab.displayName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold truncate">
-                          {collab.displayName || "Anonymous Creator"}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {formatNumber(collab.subscribersTotal)} subscribers
-                        </p>
-                        <div className="flex items-center gap-1 mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {collab.similarity.toFixed(1)}% match
-                          </Badge>
-                        </div>
-                      </div>
+      {/* ── Empty State ──────────────────────────────────────────── */}
+      {!loading && !error && collaborators.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="p-4 rounded-full bg-muted mb-4">
+            <Users className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-1">No collaborators found</h3>
+          <p className="text-muted-foreground text-sm max-w-sm">
+            {viewMode === "niche"
+              ? "No creators in your niche have been found. Try switching to \"All Collaborators\" or expand the subscriber range."
+              : "No creators are available in this range yet. Try expanding the subscriber range or ask creators to enable discoverability."}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => {
+              setViewMode("all");
+              setRangePercent("50");
+            }}
+          >
+            Show all creators
+          </Button>
+        </div>
+      )}
+
+      {/* ── Collaborator Cards ────────────────────────────────────── */}
+      {!loading && !error && collaborators.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {collaborators.map((collab) => (
+            <Card
+              key={collab.clerkId}
+              className="group overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border"
+            >
+              <CardContent className="p-5 flex flex-col h-full">
+
+                {/* Top — Avatar + Name + Match */}
+                <div className="flex items-start gap-3 mb-3">
+                  <Avatar className="h-12 w-12 shrink-0 ring-2 ring-background">
+                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-bold text-sm">
+                      {getInitials(collab.displayName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold truncate">
+                        {collab.displayName || "Anonymous Creator"}
+                      </h3>
                     </div>
-
-                    {/* Bio */}
-                    {collab.bio && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {collab.bio}
-                      </p>
-                    )}
-
-                    {/* Content Info */}
-                    <div className="space-y-2">
-                      {collab.contentGenres.length > 0 && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Content
-                          </p>
-                          <div className="flex flex-wrap gap-1">
-                            {collab.contentGenres.slice(0, 2).map((genre) => (
-                              <Badge
-                                key={genre}
-                                variant="outline"
-                                className="text-xs"
-                              >
-                                {genre}
-                              </Badge>
-                            ))}
-                            {collab.contentGenres.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{collab.contentGenres.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      {collab.subscribersTotal > 0 && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Youtube className="h-3 w-3" />
+                          {formatNumber(collab.subscribersTotal)} subs
+                        </span>
                       )}
-
-                      {collab.primaryPlatforms.length > 0 && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Platforms
-                          </p>
-                          <div className="flex flex-wrap gap-1">
-                            {collab.primaryPlatforms
-                              .slice(0, 3)
-                              .map((platform) => (
-                                <Badge
-                                  key={platform}
-                                  variant="outline"
-                                  className="text-xs"
-                                >
-                                  {platform}
-                                </Badge>
-                              ))}
-                          </div>
-                        </div>
-                      )}
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] px-1.5 py-0 border ${getMatchColor(collab.similarity)}`}
+                      >
+                        {collab.similarity.toFixed(0)}% match
+                      </Badge>
                     </div>
+                  </div>
+                </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 pt-2 border-t">
-                      {collab.email && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          asChild
+                {/* Bio */}
+                {collab.bio && (
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
+                    {collab.bio}
+                  </p>
+                )}
+
+                {/* Content Genres */}
+                {collab.contentGenres.length > 0 && (
+                  <div className="mb-2">
+                    <div className="flex flex-wrap gap-1">
+                      {collab.contentGenres.slice(0, 3).map((genre) => (
+                        <span
+                          key={genre}
+                          className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${getBadgeColor(genre)}`}
                         >
-                          <a href={`mailto:${collab.email}`}>
-                            <Mail className="h-3 w-3 mr-1" />
-                            Contact
-                          </a>
-                        </Button>
-                      )}
-                      {collab.website && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          asChild
-                        >
-                          <a
-                            href={collab.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <Globe className="h-3 w-3 mr-1" />
-                            Website
-                          </a>
-                        </Button>
-                      )}
-                      {!collab.email && !collab.website && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          disabled
-                        >
-                          <UserPlus className="h-3 w-3 mr-1" />
-                          Connect
-                        </Button>
+                          {genre}
+                        </span>
+                      ))}
+                      {collab.contentGenres.length > 3 && (
+                        <span className="text-[10px] text-muted-foreground px-2 py-0.5">
+                          +{collab.contentGenres.length - 3}
+                        </span>
                       )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+                )}
+
+                {/* Platforms */}
+                {collab.primaryPlatforms.length > 0 && (
+                  <div className="flex gap-1.5 mb-3">
+                    {collab.primaryPlatforms.slice(0, 4).map((platform) => (
+                      <span
+                        key={platform}
+                        className="flex items-center gap-1 text-[10px] bg-muted rounded-full px-2 py-0.5 text-muted-foreground"
+                      >
+                        {PLATFORM_ICONS[platform] ?? <Tv2 className="h-3 w-3" />}
+                        {platform}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Extra meta */}
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground mb-3">
+                  {collab.targetAudience && (
+                    <span>👥 {collab.targetAudience}</span>
+                  )}
+                  {collab.ageRange && (
+                    <span>🎯 {collab.ageRange}</span>
+                  )}
+                  {collab.contentTone && (
+                    <span>🎨 {collab.contentTone}</span>
+                  )}
+                  {collab.postingFrequency && (
+                    <span className="flex items-center gap-0.5">
+                      <Clock className="h-2.5 w-2.5" />
+                      {collab.postingFrequency}
+                    </span>
+                  )}
+                </div>
+
+                {/* Spacer */}
+                <div className="flex-1" />
+
+                {/* Last seen */}
+                <p className="text-[10px] text-muted-foreground mb-3">
+                  {timeAgo(collab.lastActive)}
+                </p>
+
+                {/* Contact Buttons */}
+                <div className="flex gap-2 pt-3 border-t">
+                  {collab.email ? (
+                    <Button size="sm" variant="outline" className="flex-1 text-xs h-8" asChild>
+                      <a href={`mailto:${collab.email}`}>
+                        <Mail className="h-3 w-3 mr-1.5" />
+                        Contact
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" className="flex-1 text-xs h-8" disabled>
+                      <Mail className="h-3 w-3 mr-1.5" />
+                      No email
+                    </Button>
+                  )}
+                  {collab.website && (
+                    <Button size="sm" variant="outline" className="flex-1 text-xs h-8" asChild>
+                      <a href={collab.website} target="_blank" rel="noopener noreferrer">
+                        <Globe className="h-3 w-3 mr-1.5" />
+                        Website
+                      </a>
+                    </Button>
+                  )}
+                </div>
+
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>

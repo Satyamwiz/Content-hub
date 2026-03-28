@@ -11,6 +11,9 @@ export interface CollaboratorMatch {
   primaryPlatforms: string[];
   contentGenres: string[];
   targetAudience: string | null;
+  ageRange: string | null;
+  contentTone: string | null;
+  postingFrequency: string | null;
   subscribersTotal: number;
   similarity: number; // percentage match (0-100)
   lastActive: Date;
@@ -25,7 +28,8 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(req.url);
     const rangePercent = parseInt(url.searchParams.get("range") || "20");
-    const limit = parseInt(url.searchParams.get("limit") || "10");
+    const limit = parseInt(url.searchParams.get("limit") || "30");
+    const nicheOnly = url.searchParams.get("nicheOnly") === "true";
 
     // Get current user's profile and subscriber count
     const currentUser = await prisma.user.findUnique({
@@ -51,6 +55,13 @@ export async function GET(req: NextRequest) {
     const lowerBound = Math.floor(mySubscribers * (1 - rangePercent / 100));
     const upperBound = Math.ceil(mySubscribers * (1 + rangePercent / 100));
 
+    // Build niche filter if nicheOnly is requested
+    const userGenres = currentUser.creatorProfile?.contentGenres || [];
+    const nicheFilter =
+      nicheOnly && userGenres.length > 0
+        ? { contentGenres: { hasSome: userGenres } }
+        : {};
+
     // Fetch all discoverable users from the database
     const potentialCollaborators = await prisma.creatorProfile.findMany({
       where: {
@@ -58,6 +69,7 @@ export async function GET(req: NextRequest) {
         clerkId: {
           not: userId, // Exclude current user
         },
+        ...nicheFilter,
       },
       include: {
         user: {
@@ -148,6 +160,9 @@ export async function GET(req: NextRequest) {
           primaryPlatforms: profile.primaryPlatforms || [],
           contentGenres: profile.contentGenres || [],
           targetAudience: profile.targetAudience,
+          ageRange: profile.ageRange,
+          contentTone: profile.contentTone,
+          postingFrequency: profile.postingFrequency,
           subscribersTotal,
           similarity: Math.round(similarity * 100) / 100,
           lastActive: profile.updatedAt,
